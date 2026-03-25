@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  KanbanFlow — Mini Kanban Board                              ║
+  ║  DevOps University Project                                   ║
+  ║                                                              ║
+  ║  ⚡ LIVE DEMO TIP — HOW TO TRIGGER THE DARK MODE CHANGE:    ║
+  ║  On your feature branch, change the <html> tag above to:    ║
+  ║    <html lang="en" data-theme="dark">                        ║
+  ║  Merge to dev → Jenkins deploys the dark UI to port 5001.   ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KanbanFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Design Tokens (Light Theme) ────────────────────────────────────────── */
+    :root {
+      --bg-page:         #f0ede8;
+      --bg-header:       #0f1117;
+      --bg-column:       #ffffff;
+      --bg-card:         #ffffff;
+      --bg-footer:       #0f1117;
+      --bg-input:        rgba(255,255,255,.08);
+      --bg-input-focus:  rgba(255,255,255,.15);
+      --text-primary:    #1a1a2e;
+      --text-secondary:  #6b7280;
+      --text-muted:      #9ca3af;
+      --text-inverse:    #f9fafb;
+      --border:          #e5e0d8;
+      --border-card:     #ece8e2;
+      --shadow-sm:       0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+      --shadow-md:       0 4px 16px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.05);
+      --shadow-lift:     0 8px 24px rgba(0,0,0,.12), 0 4px 8px rgba(0,0,0,.06);
+      --accent-todo:     #3b82f6;
+      --accent-prog:     #f59e0b;
+      --accent-done:     #10b981;
+      --accent-todo-bg:  #eff6ff;
+      --accent-prog-bg:  #fffbeb;
+      --accent-done-bg:  #ecfdf5;
+      --btn-primary:     #3b82f6;
+      --btn-primary-hov: #2563eb;
+      --radius-sm:       6px;
+      --radius-md:       10px;
+      --radius-lg:       14px;
+      --font-body:       'DM Sans', sans-serif;
+      --font-mono:       'DM Mono', monospace;
+      --transition:      .2s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ── Dark Theme ─────────────────────────────────────────────────────────── */
+    /* To demo this: change <html data-theme="light"> → <html data-theme="dark"> */
+    [data-theme="dark"] {
+      --bg-page:         #0b0f1a;
+      --bg-header:       #060910;
+      --bg-column:       #111827;
+      --bg-card:         #1a2235;
+      --bg-footer:       #060910;
+      --bg-input:        rgba(255,255,255,.06);
+      --bg-input-focus:  rgba(255,255,255,.12);
+      --text-primary:    #f1f5f9;
+      --text-secondary:  #94a3b8;
+      --text-muted:      #64748b;
+      --border:          #1e2d45;
+      --border-card:     #1e293b;
+      --shadow-sm:       0 1px 3px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2);
+      --shadow-md:       0 4px 16px rgba(0,0,0,.4), 0 2px 6px rgba(0,0,0,.25);
+      --shadow-lift:     0 8px 24px rgba(0,0,0,.5), 0 4px 8px rgba(0,0,0,.3);
+      --accent-todo-bg:  rgba(59,130,246,.12);
+      --accent-prog-bg:  rgba(245,158,11,.1);
+      --accent-done-bg:  rgba(16,185,129,.1);
+    }
+
+    /* ── Reset & Base ────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-page);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background var(--transition), color var(--transition);
+    }
+
+    /* ── Header ──────────────────────────────────────────────────────────────── */
+    header {
+      background: var(--bg-header);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+      flex-shrink: 0;
+    }
+    .brand-icon {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      border-radius: var(--radius-sm);
+      display: grid;
+      place-items: center;
+      font-size: 1.1rem;
+    }
+    .brand-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #f9fafb;
+      letter-spacing: -.3px;
+    }
+
+    /* Environment badge */
+    .env-badge {
+      font-family: var(--font-mono);
+      font-size: .68rem;
+      font-weight: 500;
+      padding: .2rem .6rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      border: 1px solid;
+      transition: background var(--transition), color var(--transition);
+    }
+    .env-badge.production  { background: #064e3b22; color: #6ee7b7; border-color: #065f4640; }
+    .env-badge.development { background: #1e3a5f22; color: #93c5fd; border-color: #1e40af40; }
+    .env-badge.local       { background: #37415122; color: #9ca3af; border-color: #37415140; }
+
+    /* Add task form */
+    .add-form {
+      display: flex;
+      gap: .5rem;
+      margin-left: auto;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .add-form input {
+      padding: .55rem 1rem;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,.1);
+      background: var(--bg-input);
+      color: var(--text-inverse);
+      font-family: var(--font-body);
+      font-size: .88rem;
+      width: 280px;
+      outline: none;
+      transition: background var(--transition), border-color var(--transition);
+    }
+    .add-form input::placeholder { color: rgba(255,255,255,.3); }
+    .add-form input:focus {
+      background: var(--bg-input-focus);
+      border-color: rgba(59,130,246,.5);
+    }
+    .btn-primary {
+      padding: .55rem 1.1rem;
+      background: var(--btn-primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: var(--font-body);
+      font-size: .88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background var(--transition), transform .1s;
+      white-space: nowrap;
+    }
+    .btn-primary:hover  { background: var(--btn-primary-hov); }
+    .btn-primary:active { transform: scale(.97); }
+
+    /* ── Board ───────────────────────────────────────────────────────────────── */
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+      padding: 1.5rem 2rem;
+      flex: 1;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .board { grid-template-columns: 1fr; }
+      .add-form input { width: 200px; }
+    }
+
+    /* ── Column ──────────────────────────────────────────────────────────────── */
+    .column {
+      background: var(--bg-column);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .col-header {
+      padding: .85rem 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    /* Colored top accent bar per column */
+    .col-header::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+    #col-todo      .col-header::before { background: var(--accent-todo); }
+    #col-inprogress .col-header::before { background: var(--accent-prog); }
+    #col-done      .col-header::before { background: var(--accent-done); }
+
+    .col-title-wrap { display: flex; align-items: center; gap: .5rem; }
+    .col-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    #col-todo       .col-dot { background: var(--accent-todo); }
+    #col-inprogress .col-dot { background: var(--accent-prog); }
+    #col-done       .col-dot { background: var(--accent-done); }
+
+    .col-title {
+      font-size: .88rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -.1px;
+    }
+    .col-count {
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      font-weight: 500;
+      padding: .15rem .5rem;
+      border-radius: 999px;
+      transition: background var(--transition);
+    }
+    #col-todo      .col-count { background: var(--accent-todo-bg); color: var(--accent-todo); }
+    #col-inprogress .col-count { background: var(--accent-prog-bg); color: var(--accent-prog); }
+    #col-done      .col-count { background: var(--accent-done-bg); color: var(--accent-done); }
+
+    /* Task list container */
+    .task-list {
+      padding: .75rem;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      min-height: 100px;
+    }
+
+    /* ── Task Card ───────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: .7rem .85rem;
+      display: flex;
+      align-items: flex-start;
+      gap: .5rem;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow var(--transition), transform var(--transition),
+                  background var(--transition), border-color var(--transition);
+      animation: cardIn .22s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(-8px) scale(.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .card:hover {
+      box-shadow: var(--shadow-lift);
+      transform: translateY(-1px);
+    }
+    .card-title {
+      flex: 1;
+      font-size: .85rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.45;
+      word-break: break-word;
+      padding-top: 1px;
+    }
+    .card-actions {
+      display: flex;
+      gap: .25rem;
+      flex-shrink: 0;
+      opacity: .5;
+      transition: opacity var(--transition);
+    }
+    .card:hover .card-actions { opacity: 1; }
+
+    .btn-icon {
+      width: 26px; height: 26px;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: .8rem;
+      display: grid;
+      place-items: center;
+      transition: background var(--transition), transform .1s;
+      line-height: 1;
+    }
+    .btn-icon:active { transform: scale(.88); }
+
+    .btn-move {
+      background: var(--bg-page);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .btn-move:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+    .btn-del {
+      background: #fee2e222;
+      color: #ef4444;
+      border: 1px solid #fecaca44;
+    }
+    .btn-del:hover { background: #fee2e2; }
+
+    /* ── Empty State ─────────────────────────────────────────────────────────── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .35rem;
+      padding: 1.5rem 1rem;
+      color: var(--text-muted);
+    }
+    .empty-state .empty-icon { font-size: 1.5rem; opacity: .4; }
+    .empty-state p { font-size: .78rem; }
+
+    /* ── Status Footer ───────────────────────────────────────────────────────── */
+    footer {
+      background: var(--bg-footer);
+      padding: .65rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      border-top: 1px solid rgba(255,255,255,.04);
+      transition: background var(--transition);
+    }
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      color: rgba(255,255,255,.4);
+    }
+    .status-item span.label { color: rgba(255,255,255,.25); }
+    .status-item span.value { color: rgba(255,255,255,.8); }
+
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      flex-shrink: 0;
+      animation: blink 2.4s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .25; }
+    }
+
+    /* ── Loading shimmer ─────────────────────────────────────────────────────── */
+    .skeleton {
+      height: 48px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(90deg, var(--border) 25%, var(--bg-page) 50%, var(--border) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────────── -->
+<header>
+  <div class="brand">
+    <div class="brand-icon">📋</div>
+    <span class="brand-name">KanbanFlow</span>
+    <span class="env-badge local" id="env-badge">local</span>
+  </div>
+
+  <div class="add-form">
+    <input
+      type="text"
+      id="task-input"
+      placeholder="New task title…"
+      autocomplete="off"
+    />
+    <button class="btn-primary" onclick="addTask()">+ Add Task</button>
+  </div>
+</header>
+
+<!-- ── Board ───────────────────────────────────────────────────────────────── -->
+<main class="board">
+
+  <div class="column" id="col-todo">
+    <div class="col-header">
+      <div class="col-title-wrap">
+        <div class="col-dot"></div>
+        <span class="col-title">To-Do</span>
+      </div>
+      <span class="col-count" id="count-todo">0</span>
+    </div>
+    <div class="task-list" id="list-todo">
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+    </div>
+  </div>
+
+  <div class="column" id="col-inprogress">
+    <div class="col-header">
+      <div class="col-title-wrap">
+        <div class="col-dot"></div>
+        <span class="col-title">In Progress</span>
+      </div>
+      <span class="col-count" id="count-inprogress">0</span>
+    </div>
+    <div class="task-list" id="list-inprogress">
+      <div class="skeleton"></div>
+    </div>
+  </div>
+
+  <div class="column" id="col-done">
+    <div class="col-header">
+      <div class="col-title-wrap">
+        <div class="col-dot"></div>
+        <span class="col-title">Done</span>
+      </div>
+      <span class="col-count" id="count-done">0</span>
+    </div>
+    <div class="task-list" id="list-done">
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── Status Footer ───────────────────────────────────────────────────────── -->
+<footer>
+  <div class="status-item">
+    <div class="status-dot"></div>
+    <span class="label">status</span>
+    <span class="value" id="f-status">…</span>
+  </div>
+  <div class="status-item">
+    <span class="label">version</span>
+    <span class="value" id="f-version">…</span>
+  </div>
+  <div class="status-item">
+    <span class="label">environment</span>
+    <span class="value" id="f-env">…</span>
+  </div>
+</footer>
+
+<!-- ── JavaScript ──────────────────────────────────────────────────────────── -->
+<script>
+  'use strict';
+
+  const COLS      = ['todo', 'inprogress', 'done'];
+  const COL_LABEL = { todo: 'To-Do', inprogress: 'In Progress', done: 'Done' };
+
+  // ── Rendering ─────────────────────────────────────────────────────────────
+
+  function render(tasks) {
+    COLS.forEach(col => {
+      const list  = document.getElementById(`list-${col}`);
+      const count = document.getElementById(`count-${col}`);
+      const mine  = tasks.filter(t => t.column === col);
+
+      count.textContent = mine.length;
+
+      if (mine.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">○</div>
+            <p>No tasks yet</p>
+          </div>`;
+        return;
+      }
+
+      list.innerHTML = mine.map(t => cardHTML(t)).join('');
+    });
+  }
+
+  function cardHTML(task) {
+    const idx      = COLS.indexOf(task.column);
+    const canLeft  = idx > 0;
+    const canRight = idx < COLS.length - 1;
+
+    const leftBtn  = canLeft
+      ? `<button class="btn-icon btn-move"
+           title="Move to ${COL_LABEL[COLS[idx-1]]}"
+           onclick="moveTask('${task.id}','${COLS[idx-1]}')">←</button>`
+      : '';
+    const rightBtn = canRight
+      ? `<button class="btn-icon btn-move"
+           title="Move to ${COL_LABEL[COLS[idx+1]]}"
+           onclick="moveTask('${task.id}','${COLS[idx+1]}')">→</button>`
+      : '';
+    const delBtn   = `<button class="btn-icon btn-del"
+           title="Delete task"
+           onclick="deleteTask('${task.id}')">✕</button>`;
+
+    return `
+      <div class="card" id="card-${task.id}">
+        <span class="card-title">${escHtml(task.title)}</span>
+        <div class="card-actions">${leftBtn}${rightBtn}${delBtn}</div>
+      </div>`;
+  }
+
+  function escHtml(str) {
+    return str.replace(/[&<>"']/g, c =>
+      ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  }
+
+  // ── API helpers ───────────────────────────────────────────────────────────
+
+  async function fetchTasks() {
+    try {
+      const res   = await fetch('/tasks');
+      const tasks = await res.json();
+      render(tasks);
+    } catch (err) {
+      console.error('Failed to load tasks:', err);
+    }
+  }
+
+  async function addTask() {
+    const input = document.getElementById('task-input');
+    const title = input.value.trim();
+    if (!title) { input.focus(); return; }
+
+    try {
+      await fetch('/tasks', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ title }),
+      });
+      input.value = '';
+      fetchTasks();
+    } catch (err) {
+      console.error('Failed to add task:', err);
+    }
+  }
+
+  async function moveTask(id, column) {
+    try {
+      await fetch(`/tasks/${id}`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ column }),
+      });
+      fetchTasks();
+    } catch (err) {
+      console.error('Failed to move task:', err);
+    }
+  }
+
+  async function deleteTask(id) {
+    try {
+      await fetch(`/tasks/${id}`, { method: 'DELETE' });
+      fetchTasks();
+    } catch (err) {
+      console.error('Failed to delete task:', err);
+    }
+  }
+
+  // ── Status bar ────────────────────────────────────────────────────────────
+
+  async function fetchStatus() {
+    try {
+      const res  = await fetch('/status');
+      const data = await res.json();
+
+      document.getElementById('f-status').textContent  = data.status;
+      document.getElementById('f-version').textContent = data.version;
+      document.getElementById('f-env').textContent     = data.environment;
+
+      // Update the header badge
+      const badge = document.getElementById('env-badge');
+      badge.textContent = data.environment;
+      badge.className   = `env-badge ${data.environment}`;
+    } catch (_) { /* silently ignore */ }
+  }
+
+  // ── Enter-key shortcut ────────────────────────────────────────────────────
+
+  document.getElementById('task-input')
+    .addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+
+  fetchTasks();
+  fetchStatus();
+</script>
+
+</body>
+</html>
