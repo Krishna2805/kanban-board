@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Jenkinsfile — Mini Kanban Board CI/CD Pipeline (WINDOWS VERSION)
-// Uses `bat` instead of `sh` throughout — required for Windows Jenkins agents.
+// Uses `bat` for Windows, `py` launcher instead of `python`
 // ─────────────────────────────────────────────────────────────────────────────
 
 pipeline {
@@ -14,7 +14,7 @@ pipeline {
     stages {
 
         // ── Stage 1: Checkout ─────────────────────────────────────────────────
-        stage('Stage 1 \u2014 Checkout') {
+        stage('Stage 1 - Checkout') {
             steps {
                 echo "===================================================="
                 echo " STAGE 1: Checkout"
@@ -26,15 +26,15 @@ pipeline {
         }
 
         // ── Stage 2: Install Dependencies ────────────────────────────────────
-        stage('Stage 2 \u2014 Install Dependencies') {
+        stage('Stage 2 - Install Dependencies') {
             steps {
                 echo "===================================================="
                 echo " STAGE 2: Installing Python dependencies"
                 echo "===================================================="
                 bat '''
-                    python -m venv venv
+                    py -m venv venv
                     call venv\\Scripts\\activate.bat
-                    python -m pip install --upgrade pip --quiet
+                    py -m pip install --upgrade pip --quiet
                     pip install -r requirements.txt --quiet
                     pip list --format=columns
                 '''
@@ -42,28 +42,28 @@ pipeline {
         }
 
         // ── Stage 3: Quality Gate ─────────────────────────────────────────────
-        stage('Stage 3 \u2014 Quality Gate') {
+        stage('Stage 3 - Quality Gate') {
             steps {
                 echo "===================================================="
                 echo " STAGE 3: Running automated tests (Pytest)"
                 echo "===================================================="
                 bat '''
                     call venv\\Scripts\\activate.bat
-                    python -m pytest test_app.py -v --tb=short
+                    py -m pytest test_app.py -v --tb=short
                 '''
             }
             post {
                 success {
-                    echo "\u2705 All tests passed — proceeding to build."
+                    echo "All tests passed - proceeding to build."
                 }
                 failure {
-                    echo "\u26A8 Tests FAILED — pipeline aborted. No build. No deployment."
+                    echo "Tests FAILED - pipeline aborted. No build. No deployment."
                 }
             }
         }
 
         // ── Stage 4: Build Docker Image ───────────────────────────────────────
-        stage('Stage 4 \u2014 Build Docker Image') {
+        stage('Stage 4 - Build Docker Image') {
             steps {
                 script {
                     def envName    = (env.BRANCH_NAME == 'main') ? 'production' : 'development'
@@ -89,7 +89,7 @@ pipeline {
         }
 
         // ── Stage 5: Deploy ───────────────────────────────────────────────────
-        stage('Stage 5 \u2014 Deploy') {
+        stage('Stage 5 - Deploy') {
             steps {
                 script {
                     def appVersion = "v1.${env.BUILD_NUMBER}"
@@ -111,7 +111,7 @@ pipeline {
                                 -e ENV_NAME=production ^
                                 ${IMAGE_NAME}:${env.BUILD_NUMBER}
                         """
-                        echo "\u2705 Production app live at http://localhost:5000"
+                        echo "Production app live at http://localhost:5000"
 
                     } else if (env.BRANCH_NAME == 'dev') {
 
@@ -130,7 +130,7 @@ pipeline {
                                 -e ENV_NAME=development ^
                                 ${IMAGE_NAME}:${env.BUILD_NUMBER}
                         """
-                        echo "\u2705 Development app live at http://localhost:5001"
+                        echo "Development app live at http://localhost:5001"
 
                     } else {
                         echo "Branch '${env.BRANCH_NAME}' is not a deploy target. Skipping."
