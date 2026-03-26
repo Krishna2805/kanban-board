@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Jenkinsfile — Mini Kanban Board CI/CD Pipeline (WINDOWS VERSION)
-// Hardcoded Python path — required because Jenkins SYSTEM service cannot
-// access user-level Python at C:\Users\krish\...
+// Fix: docker stop/rm/run split into separate bat calls to avoid
+//      exit /b 0 killing the entire script block prematurely.
 // ─────────────────────────────────────────────────────────────────────────────
 
 pipeline {
@@ -97,9 +97,11 @@ pipeline {
                         echo " STAGE 5: Deploying to PRODUCTION (port 5000)"
                         echo "===================================================="
 
+                        // Stop and remove are separate calls so failures don't
+                        // kill the script — each bat block exits independently
+                        bat "docker stop kanban-prod 2>nul || echo no existing container to stop"
+                        bat "docker rm   kanban-prod 2>nul || echo no existing container to remove"
                         bat """
-                            docker stop kanban-prod 2>nul & exit /b 0
-                            docker rm   kanban-prod 2>nul & exit /b 0
                             docker run -d ^
                                 --name kanban-prod ^
                                 --restart unless-stopped ^
@@ -116,9 +118,9 @@ pipeline {
                         echo " STAGE 5: Deploying to DEVELOPMENT (port 5001)"
                         echo "===================================================="
 
+                        bat "docker stop kanban-dev 2>nul || echo no existing container to stop"
+                        bat "docker rm   kanban-dev 2>nul || echo no existing container to remove"
                         bat """
-                            docker stop kanban-dev 2>nul & exit /b 0
-                            docker rm   kanban-dev 2>nul & exit /b 0
                             docker run -d ^
                                 --name kanban-dev ^
                                 --restart unless-stopped ^
