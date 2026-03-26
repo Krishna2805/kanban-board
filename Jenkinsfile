@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Jenkinsfile — Mini Kanban Board CI/CD Pipeline (WINDOWS VERSION)
-// Uses `bat` for Windows, `py` launcher instead of `python`
+// Hardcoded Python path — required because Jenkins SYSTEM service cannot
+// access user-level Python at C:\Users\krish\...
 // ─────────────────────────────────────────────────────────────────────────────
 
 pipeline {
@@ -8,12 +9,12 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'kanban-board'
+        IMAGE_NAME  = 'kanban-board'
+        PYTHON      = 'C:\\Users\\krish\\AppData\\Local\\Programs\\Python\\Python311\\python.exe'
     }
 
     stages {
 
-        // ── Stage 1: Checkout ─────────────────────────────────────────────────
         stage('Stage 1 - Checkout') {
             steps {
                 echo "===================================================="
@@ -25,32 +26,30 @@ pipeline {
             }
         }
 
-        // ── Stage 2: Install Dependencies ────────────────────────────────────
         stage('Stage 2 - Install Dependencies') {
             steps {
                 echo "===================================================="
                 echo " STAGE 2: Installing Python dependencies"
                 echo "===================================================="
-                bat '''
-                    py -m venv venv
+                bat """
+                    "%PYTHON%" -m venv venv
                     call venv\\Scripts\\activate.bat
-                    py -m pip install --upgrade pip --quiet
+                    "%PYTHON%" -m pip install --upgrade pip --quiet
                     pip install -r requirements.txt --quiet
                     pip list --format=columns
-                '''
+                """
             }
         }
 
-        // ── Stage 3: Quality Gate ─────────────────────────────────────────────
         stage('Stage 3 - Quality Gate') {
             steps {
                 echo "===================================================="
                 echo " STAGE 3: Running automated tests (Pytest)"
                 echo "===================================================="
-                bat '''
+                bat """
                     call venv\\Scripts\\activate.bat
-                    py -m pytest test_app.py -v --tb=short
-                '''
+                    "%PYTHON%" -m pytest test_app.py -v --tb=short
+                """
             }
             post {
                 success {
@@ -62,7 +61,6 @@ pipeline {
             }
         }
 
-        // ── Stage 4: Build Docker Image ───────────────────────────────────────
         stage('Stage 4 - Build Docker Image') {
             steps {
                 script {
@@ -88,7 +86,6 @@ pipeline {
             }
         }
 
-        // ── Stage 5: Deploy ───────────────────────────────────────────────────
         stage('Stage 5 - Deploy') {
             steps {
                 script {
