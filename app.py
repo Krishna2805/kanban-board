@@ -15,6 +15,7 @@ app = Flask(__name__)
 
 # ── In-memory task store (seeded with demo data) ─────────────────────────────
 tasks = [
+    {"id": str(uuid.uuid4()), "title": "Pipeline is fully automated 🚀", "column": "done"},
     {"id": str(uuid.uuid4()), "title": "Configure Jenkins Pipeline",  "column": "done"},
     {"id": str(uuid.uuid4()), "title": "Write Dockerfile",            "column": "done"},
     {"id": str(uuid.uuid4()), "title": "Set up GitHub Webhooks",      "column": "inprogress"},
