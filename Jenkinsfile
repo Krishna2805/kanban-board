@@ -1,7 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Jenkinsfile — Mini Kanban Board CI/CD Pipeline (WINDOWS VERSION)
-// Fix: docker stop/rm/run split into separate bat calls to avoid
-//      exit /b 0 killing the entire script block prematurely.
 // ─────────────────────────────────────────────────────────────────────────────
 
 pipeline {

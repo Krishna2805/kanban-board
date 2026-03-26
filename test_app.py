@@ -16,7 +16,6 @@ import app as app_module
 from app import app
 
 
-# ── Fixtures ──────────────────────────────────────────────────────────────────
 
 @pytest.fixture
 def client(tmp_path):
@@ -118,23 +117,15 @@ def test_add_task_without_title_returns_400(client):
     assert response.status_code == 400
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  ⚠️  THE "DEMO BUG" TEST — READ THIS CAREFULLY BEFORE YOUR PRESENTATION  ⚠️
-# ─────────────────────────────────────────────────────────────────────────────
-#
+
 #  WHAT THIS TEST VALIDATES:
 #    Every new task must be placed in the 'todo' column by default.
 #    This is a fundamental business rule of the Kanban workflow.
-#
-#  HOW TO TRIGGER A LIVE PIPELINE FAILURE (takes ~20 seconds total):
 #
 #    Step 1 ► Open this file and find the assert line below.
 #             Change  'todo'  →  'done'   (an intentionally wrong value)
 #
 #    Step 2 ► Save the file, then commit and push to the dev branch:
-#               git add test_app.py
-#               git commit -m "bug: wrong column assertion"
-#               git push origin dev
 #
 #    WHAT JENKINS WILL DO:
 #      Stage 1 (Checkout)     — ✅  passes
@@ -144,14 +135,6 @@ def test_add_task_without_title_returns_400(client):
 #      Stage 4 (Build)        — ⛔  SKIPPED — never reached
 #      Stage 5 (Deploy)       — ⛔  SKIPPED — never reached
 #
-#    The currently running container is left untouched.
-#    Bad code never reaches a live environment. That is the pipeline doing
-#    exactly what it was designed to do.
-#
-#  HOW TO RECOVER AFTER THE DEMO:
-#    Change 'done' back to 'todo', commit, and re-push.
-#    The pipeline goes green and deploys normally.
-#
 # ─────────────────────────────────────────────────────────────────────────────
 def test_new_task_lands_in_todo_column(client):
     """A freshly created task must start in the 'todo' column."""
@@ -159,6 +142,4 @@ def test_new_task_lands_in_todo_column(client):
     assert response.status_code == 201
     data = response.get_json()
 
-    # ↓↓↓  CHANGE 'todo' TO 'done' TO TRIGGER THE LIVE PIPELINE FAILURE  ↓↓↓
     assert data["column"] == "todo"
-    # ↑↑↑  CHANGE 'todo' TO 'done' TO TRIGGER THE LIVE PIPELINE FAILURE  ↑↑↑
