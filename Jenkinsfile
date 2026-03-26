@@ -97,10 +97,10 @@ pipeline {
                         echo " STAGE 5: Deploying to PRODUCTION (port 5000)"
                         echo "===================================================="
 
-                        // Stop and remove are separate calls so failures don't
-                        // kill the script — each bat block exits independently
-                        bat "docker stop kanban-prod 2>nul || echo no existing container to stop"
-                        bat "docker rm   kanban-prod 2>nul || echo no existing container to remove"
+                        // returnStatus: true makes Jenkins ignore non-zero exit codes
+                        // so the pipeline continues even if no container exists yet
+                        bat returnStatus: true, script: 'docker stop kanban-prod'
+                        bat returnStatus: true, script: 'docker rm   kanban-prod'
                         bat """
                             docker run -d ^
                                 --name kanban-prod ^
@@ -118,8 +118,8 @@ pipeline {
                         echo " STAGE 5: Deploying to DEVELOPMENT (port 5001)"
                         echo "===================================================="
 
-                        bat "docker stop kanban-dev 2>nul || echo no existing container to stop"
-                        bat "docker rm   kanban-dev 2>nul || echo no existing container to remove"
+                        bat returnStatus: true, script: 'docker stop kanban-dev'
+                        bat returnStatus: true, script: 'docker rm   kanban-dev'
                         bat """
                             docker run -d ^
                                 --name kanban-dev ^

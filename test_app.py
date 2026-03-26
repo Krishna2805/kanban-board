@@ -9,6 +9,8 @@ Contains:
   • 1 clearly labelled "Demo Bug" test for live pipeline failure demo
 """
 
+import os
+import tempfile
 import pytest
 import app as app_module
 from app import app
@@ -17,24 +19,45 @@ from app import app
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
 @pytest.fixture
-def client():
-    """Provide a configured Flask test client."""
+def client(tmp_path):
+    """Provide a configured Flask test client with an isolated temp database."""
+    db_path = str(tmp_path / "test_kanban.db")
+    app_module.DATABASE = db_path
+    app_module.init_db()
+
     app.config["TESTING"] = True
     with app.test_client() as c:
         yield c
 
 
 @pytest.fixture(autouse=True)
-def reset_task_store():
+def reset_task_store(tmp_path):
     """
-    Automatically reset the in-memory task list before and after every test.
-    This guarantees tests are fully isolated from each other.
+    Automatically reset the database before and after every test.
+    Uses a temporary database file to guarantee full test isolation.
     """
-    original = app_module.tasks[:]      # snapshot before test
-    app_module.tasks.clear()            # start each test clean
+    db_path = str(tmp_path / "test_kanban.db")
+    app_module.DATABASE = db_path
+
+    # Reinitialise with a clean database for each test
+    import sqlite3
+    db = sqlite3.connect(db_path)
+    db.execute("DROP TABLE IF EXISTS tasks")
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS tasks (
+            id     TEXT PRIMARY KEY,
+            title  TEXT NOT NULL,
+            column_name TEXT NOT NULL DEFAULT 'todo'
+        )
+    """)
+    db.commit()
+    db.close()
+
     yield
-    app_module.tasks.clear()            # clean up after test
-    app_module.tasks.extend(original)   # restore original state
+
+    # Cleanup after test
+    if os.path.exists(db_path):
+        os.remove(db_path)
 
 
 # ── /status Endpoint Tests ────────────────────────────────────────────────────
